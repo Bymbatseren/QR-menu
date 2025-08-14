@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-// ✅ SINGLE-FILE, MOBILE-FIRST DEMO
+// ✅ SINGLE-FILE, MOBILE-FIRST DEMO (TypeScript)
 // - Customer QR Menu (menu → cart → place order → track status)
 // - Staff Board with simple PIN login (1234)
 // - No backend: mock data + local state only (ready to swap with your MERN APIs)
@@ -8,27 +8,56 @@ import React, { useEffect, useMemo, useState } from "react";
 // - Designed for phones, still works on desktop
 
 // -----------------------------
-// Helpers
+// Helpers & Types
 // -----------------------------
-const currency = (n) => `₮${n.toLocaleString("en-US")}`;
+const currency = (n: number) => `₮${n.toLocaleString("en-US")}`;
 
-const Status = {
-  PENDING: "pending",
-  IN_PROGRESS: "in_progress",
-  SERVED: "served",
-  PAID: "paid",
-};
+export enum Status {
+  PENDING = "pending",
+  IN_PROGRESS = "in_progress",
+  SERVED = "served",
+  PAID = "paid",
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  categoryId: string;
+  img: string;
+}
+
+interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  qty: number;
+}
+
+interface Order {
+  id: number;
+  tableCode: string;
+  items: CartItem[];
+  total: number;
+  status: Status;
+  createdAt?: string;
+}
 
 // -----------------------------
 // Mock Data
 // -----------------------------
-const CATEGORIES = [
+const CATEGORIES: Category[] = [
   { id: "c1", name: "🍻 Ундаа" },
   { id: "c2", name: "🍟 Хоол/Закуска" },
   { id: "c3", name: "☕ Кофе/Бусад" },
 ];
 
-const PRODUCTS = [
+const PRODUCTS: Product[] = [
   { id: "p1", name: "Beer 500ml", price: 6500, categoryId: "c1", img: "https://placehold.co/80x80" },
   { id: "p2", name: "Mojito", price: 8000, categoryId: "c1", img: "https://placehold.co/80x80" },
   { id: "p3", name: "Fries", price: 4500, categoryId: "c2", img: "https://placehold.co/80x80" },
@@ -43,7 +72,7 @@ let orderCounter = 105;
 // Root App
 // -----------------------------
 export default function App() {
-  const [tab, setTab] = useState("customer"); // "customer" | "staff"
+  const [tab, setTab] = useState<"customer" | "staff">("customer");
 
   return (
     <div className="min-h-screen w-full bg-neutral-50 text-neutral-900">
@@ -85,25 +114,26 @@ export default function App() {
 // -----------------------------
 function CustomerScreen() {
   const tableFromUrl = useTableFromURL();
-  const [query, setQuery] = useState("");
-  const [activeCat, setActiveCat] = useState("all");
-  const [cart, setCart] = useState([]); // {productId, name, price, qty}
-  const [orders, setOrders] = useState([]); // placed orders for this session
-  const [trackingId, setTrackingId] = useState(null);
+  const [query, setQuery] = useState<string>("");
+  const [activeCat, setActiveCat] = useState<string>("all");
+  const [cart, setCart] = useState<CartItem[]>([]); // {productId, name, price, qty}
+  const [orders, setOrders] = useState<Order[]>([]); // placed orders for this session
+  const [trackingId, setTrackingId] = useState<number | null>(null);
 
-  const filtered = useMemo(() => {
-    return PRODUCTS.filter((p) =>
-      (activeCat === "all" || p.categoryId === activeCat) &&
-      p.name.toLowerCase().includes(query.toLowerCase())
+  const filtered = useMemo<Product[]>(() => {
+    return PRODUCTS.filter(
+      (p) =>
+        (activeCat === "all" || p.categoryId === activeCat) &&
+        p.name.toLowerCase().includes(query.toLowerCase())
     );
   }, [activeCat, query]);
 
-  const subtotal = useMemo(
+  const subtotal = useMemo<number>(
     () => cart.reduce((sum, i) => sum + i.price * i.qty, 0),
     [cart]
   );
 
-  const addToCart = (p) => {
+  const addToCart = (p: Product) => {
     setCart((prev) => {
       const idx = prev.findIndex((x) => x.productId === p.id);
       if (idx >= 0) {
@@ -115,7 +145,7 @@ function CustomerScreen() {
     });
   };
 
-  const decQty = (pid) =>
+  const decQty = (pid: string) =>
     setCart((prev) =>
       prev
         .map((x) => (x.productId === pid ? { ...x, qty: x.qty - 1 } : x))
@@ -126,7 +156,7 @@ function CustomerScreen() {
 
   const placeOrder = () => {
     if (!cart.length) return;
-    const newOrder = {
+    const newOrder: Order = {
       id: ++orderCounter,
       tableCode: tableFromUrl || "T?",
       items: cart.map((c) => ({ ...c })),
@@ -139,7 +169,7 @@ function CustomerScreen() {
     clearCart();
   };
 
-  const currentTracking = orders.find((o) => o.id === trackingId);
+  const currentTracking = orders.find((o) => o.id === trackingId) || null;
 
   return (
     <section className="py-4">
@@ -177,6 +207,7 @@ function CustomerScreen() {
       <div className="mt-4 grid grid-cols-1 gap-3">
         {filtered.map((p) => (
           <div key={p.id} className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.img} alt={p.name} className="h-16 w-16 rounded-xl object-cover" />
             <div className="flex-1">
               <div className="font-medium">{p.name}</div>
@@ -197,12 +228,48 @@ function CustomerScreen() {
         )}
       </div>
 
+      {/* Cart List (inline) */}
+      {cart.length > 0 && (
+        <div className="mt-5 rounded-2xl border bg-white p-4">
+          <div className="mb-2 text-sm text-neutral-500">Сагс</div>
+          <ul className="divide-y">
+            {cart.map((it) => (
+              <li key={it.productId} className="flex items-center justify-between py-2">
+                <div>
+                  <div className="font-medium">{it.name}</div>
+                  <div className="text-xs text-neutral-500">{currency(it.price)}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => decQty(it.productId)}
+                    className="h-8 w-8 rounded-full border text-lg leading-none"
+                    aria-label="Decrease"
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center">{it.qty}</span>
+                  <button
+                    onClick={() => addToCart(PRODUCTS.find((p) => p.id === it.productId)!)}
+                    className="h-8 w-8 rounded-full border text-lg leading-none"
+                    aria-label="Increase"
+                  >
+                    +
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Sticky Cart Bar */}
       <div className="fixed bottom-16 left-0 right-0 z-20">
         <div className="mx-auto max-w-md px-4">
           <div className="rounded-2xl border bg-white p-3 shadow-lg">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-neutral-600">Сагс: {cart.reduce((a, b) => a + b.qty, 0)} ширхэг</div>
+              <div className="text-sm text-neutral-600">
+                Сагс: {cart.reduce((a, b) => a + b.qty, 0)} ширхэг
+              </div>
               <div className="font-semibold">{currency(subtotal)}</div>
             </div>
             <div className="mt-2 flex gap-2">
@@ -236,9 +303,7 @@ function CustomerScreen() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-neutral-500">
-            * Энэхүү демо-д статусыг Staff Board-аас өөрчилнө.
-          </p>
+          <p className="mt-3 text-xs text-neutral-500">* Энэхүү демо-д статусыг Staff Board-аас өөрчилнө.</p>
         </div>
       )}
 
@@ -263,30 +328,33 @@ function CustomerScreen() {
 // Staff Screen (PIN login + Boards)
 // -----------------------------
 function StaffScreen() {
-  const [pin, setPin] = useState("");
-  const [authed, setAuthed] = useState(false);
-  const [orders, setOrders] = useState(() => demoSeedOrders());
-  const [tab, setTab] = useState(Status.PENDING);
+  const [pin, setPin] = useState<string>("");
+  const [authed, setAuthed] = useState<boolean>(false);
+  const [orders, setOrders] = useState<Order[]>(() => demoSeedOrders());
+  const [tab, setTab] = useState<Status>(Status.PENDING);
 
-  const lists = useMemo(() => ({
-    [Status.PENDING]: orders.filter((o) => o.status === Status.PENDING),
-    [Status.IN_PROGRESS]: orders.filter((o) => o.status === Status.IN_PROGRESS),
-    [Status.SERVED]: orders.filter((o) => o.status === Status.SERVED),
-    [Status.PAID]: orders.filter((o) => o.status === Status.PAID),
-  }), [orders]);
+  const lists = useMemo(
+    () => ({
+      [Status.PENDING]: orders.filter((o) => o.status === Status.PENDING),
+      [Status.IN_PROGRESS]: orders.filter((o) => o.status === Status.IN_PROGRESS),
+      [Status.SERVED]: orders.filter((o) => o.status === Status.SERVED),
+      [Status.PAID]: orders.filter((o) => o.status === Status.PAID),
+    }),
+    [orders]
+  );
 
   const doLogin = () => {
     if (pin === "1234") setAuthed(true);
   };
 
-  const nextStatus = (s) => {
+  const nextStatus = (s: Status): Status => {
     if (s === Status.PENDING) return Status.IN_PROGRESS;
     if (s === Status.IN_PROGRESS) return Status.SERVED;
     if (s === Status.SERVED) return Status.PAID;
     return Status.PAID;
   };
 
-  const advance = (id) =>
+  const advance = (id: number) =>
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: nextStatus(o.status) } : o)));
 
   if (!authed) {
@@ -305,9 +373,7 @@ function StaffScreen() {
           <button onClick={doLogin} className="mt-3 w-full rounded-xl bg-black px-4 py-3 font-medium text-white">
             Нэвтрэх
           </button>
-          <p className="mt-3 text-xs text-neutral-500">
-            * Жижиг паб-д тохирох энгийн шийдэл. PROD дээр JWT/Role хийхийг зөвлөе.
-          </p>
+          <p className="mt-3 text-xs text-neutral-500">* Жижиг паб-д тохирох энгийн шийдэл. PROD дээр JWT/Role хийхийг зөвлөе.</p>
         </div>
       </section>
     );
@@ -362,7 +428,7 @@ function StaffScreen() {
 // -----------------------------
 // UI Bits
 // -----------------------------
-function Chip({ label, active, onClick }) {
+function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -375,7 +441,7 @@ function Chip({ label, active, onClick }) {
   );
 }
 
-function TabBtn({ label, active, onClick }) {
+function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -388,13 +454,15 @@ function TabBtn({ label, active, onClick }) {
   );
 }
 
-function StatusBadge({ status }) {
-  const s = {
-    [Status.PENDING]: { text: "Хүлээгдэж", cls: "bg-red-100 text-red-700" },
-    [Status.IN_PROGRESS]: { text: "Бэлтгэж", cls: "bg-amber-100 text-amber-800" },
-    [Status.SERVED]: { text: "Бэлэн", cls: "bg-green-100 text-green-700" },
-    [Status.PAID]: { text: "Төлсөн", cls: "bg-neutral-200 text-neutral-700" },
-  }[status];
+function StatusBadge({ status }: { status: Status }) {
+  const s = (
+    {
+      [Status.PENDING]: { text: "Хүлээгдэж", cls: "bg-red-100 text-red-700" },
+      [Status.IN_PROGRESS]: { text: "Бэлтгэж", cls: "bg-amber-100 text-amber-800" },
+      [Status.SERVED]: { text: "Бэлэн", cls: "bg-green-100 text-green-700" },
+      [Status.PAID]: { text: "Төлсөн", cls: "bg-neutral-200 text-neutral-700" },
+    } as const
+  )[status];
   return <span className={`rounded-full px-2 py-0.5 text-xs ${s.cls}`}>{s.text}</span>;
 }
 
@@ -408,8 +476,8 @@ function FooterBar() {
   );
 }
 
-function useTableFromURL() {
-  const [code, setCode] = useState(null);
+function useTableFromURL(): string | null {
+  const [code, setCode] = useState<string | null>(null);
   useEffect(() => {
     try {
       const url = new URL(window.location.href);
@@ -420,14 +488,14 @@ function useTableFromURL() {
   return code;
 }
 
-function demoSeedOrders() {
+function demoSeedOrders(): Order[] {
   return [
     {
       id: 104,
       tableCode: "T12",
       items: [
-        { name: "Beer 500ml", qty: 2 },
-        { name: "Fries", qty: 1 },
+        { productId: "p1", name: "Beer 500ml", price: 6500, qty: 2 },
+        { productId: "p3", name: "Fries", price: 4500, qty: 1 },
       ],
       total: 17500,
       status: Status.PENDING,
@@ -435,22 +503,17 @@ function demoSeedOrders() {
     {
       id: 103,
       tableCode: "T5",
-      items: [
-        { name: "Mojito", qty: 1 },
-      ],
+      items: [{ productId: "p2", name: "Mojito", price: 8000, qty: 1 }],
       total: 8000,
       status: Status.IN_PROGRESS,
     },
     {
       id: 101,
       tableCode: "T3",
-      items: [
-        { name: "Americano", qty: 1 },
-      ],
+      items: [{ productId: "p5", name: "Americano", price: 6000, qty: 1 }],
       total: 6000,
       status: Status.SERVED,
     },
   ];
 }
-
 
