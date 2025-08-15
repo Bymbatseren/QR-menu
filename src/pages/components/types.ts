@@ -1,9 +1,4 @@
-export enum Status {
-  PENDING = "pending",
-  IN_PROGRESS = "in_progress",
-  SERVED = "served",
-  PAID = "paid",
-}
+export type Status = "pending" | "in_progress" | "served" | "paid";
 
 export interface Category {
   id: string;
@@ -26,7 +21,7 @@ export interface CartItem {
 }
 
 export interface Order {
-  _id: number;
+  _id: string;
   tableCode: string;
   items: CartItem[];
   total: number;
