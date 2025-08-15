@@ -15,7 +15,7 @@ export function CustomerScreen({ products, categories }: CustomerScreenProps) {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [trackingId, setTrackingId] = useState<number | null>(null);
+  const [trackingId, setTrackingId] = useState<string | null>(null);
   const filtered = useMemo(
     () =>
       products.filter(
