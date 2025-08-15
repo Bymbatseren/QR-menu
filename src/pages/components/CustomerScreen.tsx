@@ -66,14 +66,14 @@ export function CustomerScreen({ products, categories }: CustomerScreenProps) {
       });
       const order: Order = await res.json();
       setOrders((o) => [order, ...o]);
-      setTrackingId(order.id);
+      setTrackingId(order._id);
       clearCart();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const currentTracking = orders.find((o) => o.id === trackingId) || null;
+  const currentTracking = orders.find((o) => o._id === trackingId) || null;
 
   return (
     <section className="py-4">
@@ -195,7 +195,7 @@ export function CustomerScreen({ products, categories }: CustomerScreenProps) {
           <div className="mb-2 text-sm text-neutral-500">Таны захиалга</div>
           <div className="flex items-center justify-between">
             <div className="font-semibold">
-              #{currentTracking.id} – ₮{currentTracking.total.toLocaleString()}
+              #{currentTracking._id} – ₮{currentTracking.total.toLocaleString()}
             </div>
             <StatusBadge status={currentTracking.status} />
           </div>
